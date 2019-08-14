@@ -5,12 +5,16 @@
 </template>
 
 <script>
-import exportExcell from "../lib/export";
+import exportExcell, { getBase64Image } from "../lib/export";
 import list from "./data";
+import img from "../assets/bg.jpg";
+import img1 from "../assets/logo.png";
 export default {
   name: "HelloWorld",
   methods: {
-    expFn() {
+    async expFn() {
+      let base64Img = await getBase64Image(img, "jpeg", 0.8);
+      let wsbase64Img = await getBase64Image(img1, "jpeg", 0.8);
       exportExcell({
         sheets: [
           {
@@ -108,6 +112,31 @@ export default {
                 }
               ]
             },
+            backgroundImage: {
+              base64: base64Img,
+              extension: "jpeg"
+            },
+            wsImages: [
+              {
+                base64: wsbase64Img,
+                range: "B2:D6"
+              },
+              {
+                base64: wsbase64Img,
+                range: {
+                  tl: { col: 9.5, row: 1.5 },
+                  br: { col: 12.5, row: 5.5 }
+                }
+              },
+              {
+                base64: wsbase64Img,
+                range: {
+                  tl: { col: 9.5, row: 10.5 },
+                  br: { col: 12.5, row: 15.5 },
+                  editAs: "oneCell"
+                }
+              }
+            ],
             sheetName: "Sheet1"
           },
           {
@@ -167,6 +196,24 @@ export default {
                   data: list
                 }
               ]
+            ],
+            wsImages: [
+              {
+                base64: wsbase64Img,
+                range: {
+                  tl: { col: 0, row: 0 },
+                  br:{col:4,row:4},
+                  ext: { width: 500, height: 200 }
+                }
+              },
+              {
+                base64: wsbase64Img,
+                range: {
+                  tl: { col: 10, row: 0 },
+                  br:{col:14,row:6},
+                  editAs:'absolute'
+                }
+              }
             ],
             sheetName: "Sheet2"
           }

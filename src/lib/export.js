@@ -1,7 +1,7 @@
 import Excel from 'exceljs';
 import { saveAs } from 'file-saver';
 // import Range from 'exceljs/dist/es5/doc/range';
-import { convertToRows, getAllColumns,typeOf } from './utils';
+import { convertToRows, getAllColumns, typeOf } from './utils';
 // window.Range = Range;
 let TMP_MERGECELLINFO = {};//保存单元格合并信息，用于覆盖后面单元格值
 function exportExcell(opt = {}) {
@@ -34,14 +34,94 @@ function createWorkSheets(workbook, sheets) {
     sheets.forEach((sheet, index) => {
         try {
             TMP_MERGECELLINFO = {};
-            let { tables, sheetName = `Sheet${index + 1}`,props } = sheet;
-            let worksheet = addWorksheet(workbook, sheetName,props);
+            let { tables, sheetName = `Sheet${index + 1}`, props, backgroundImage,wsImages } = sheet;
+            let worksheet = addWorksheet(workbook, sheetName, props);
+            setSheetBackgroundImage(workbook, worksheet, backgroundImage);
+            setSheetRangeImages(workbook, worksheet, wsImages);
             createTablesOfSheet(worksheet, tables);
         } catch (error) {
             // eslint-disable-next-line no-console
             console.error(error);
         }
     });
+}
+function getUrlBase64(img, extension,quality=1) {
+    var canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+    var ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0, img.width, img.height);
+    var ext = extension || img.src.substring(img.src.lastIndexOf(".") + 1).toLowerCase();
+    // toDataURL方法，可以是image/jpeg或image/webp,默认image/png
+    var dataURL = canvas.toDataURL("image/" + ext,quality);
+    return dataURL;
+}
+async function loadImage(src) {
+    return new Promise((resolve, reject) => {
+        let img = new Image();
+        img.src = src;
+        img.onload = function () {
+            resolve(img);
+        };
+        img.onerror = function (error) {
+            reject(error);
+        };
+    });
+}
+async function getBase64Image(imgSrc,extension='',quality=1) {
+    let img = await loadImage(imgSrc);
+    return getUrlBase64(img,extension,quality);
+}
+export { getBase64Image };
+async function setSheetBackgroundImage(workbook, worksheet, backgroundImage) {
+    try {
+        if (backgroundImage && typeOf(backgroundImage) === 'object') {
+            let { filename, base64, extension='jpeg' } = backgroundImage;
+            if (filename) {
+                // eslint-disable-next-line no-console
+                console.warn('backgroundImage.filename not support！');
+            } else if (base64) {
+                let imgId = workbook.addImage({
+                    base64,
+                    extension
+                });
+                worksheet.addBackgroundImage(imgId);
+            }
+        }
+    } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(error);
+    }
+}
+function setSheetRangeImages(workbook, worksheet, wsImages) {
+    try {
+        if (wsImages && typeOf(wsImages) === 'array') {
+            wsImages.forEach((image,index) => {
+                let { filename, base64, extension='jpeg', range } = image;
+                if (filename) {
+                    // eslint-disable-next-line no-console
+                    console.warn(`wsImages[${index}].filename not support！`);
+                } else if (base64) {
+                    let imgId = workbook.addImage({
+                        base64,
+                        extension
+                    });
+                    addSheetImage(worksheet, imgId, range);
+                }
+            });
+        }
+    } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(error);
+    }
+}
+function addSheetImage(worksheet, imgId, opt) {
+    try {
+        worksheet.addImage(imgId, opt);
+    } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(error);
+    }
 }
 function createTablesOfSheet(worksheet, tables) {
     let tableConf = {
@@ -67,7 +147,7 @@ function createAndAppendTable(worksheet, table, tableConf) {
     let { startC, startR, maxRowsCount } = tableConf;
     let { left = 0, top = 0, bottom = 0, right = 0 } = space || {};
     let hasOrigin = false;
-    if (origin&&typeOf(origin)==='object') {
+    if (origin && typeOf(origin) === 'object') {
         hasOrigin = true;
         let { r = 0, c = 0 } = origin;
         startC = c > 0 ? c - 1 : 0;
@@ -186,8 +266,8 @@ function setHeaderMerge(worksheet, merges = [], startR, startC) {
         }
     });
 }
-function addWorksheet(workbook, sheetName,props={}) {
-    return workbook.addWorksheet(sheetName,props);
+function addWorksheet(workbook, sheetName, props = {}) {
+    return workbook.addWorksheet(sheetName, props);
 }
 function initWorkBookViews(workbook) {
     workbook.views = [
