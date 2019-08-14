@@ -14,6 +14,7 @@ function typeOf(obj) {
     };
     return map[toString.call(obj)];
 }
+export { typeOf };
 // deepCopy
 function deepCopy(data) {
     const t = typeOf(data);
@@ -38,7 +39,6 @@ function deepCopy(data) {
     }
     return o;
 }
-
 
 // set forTableHead to true when convertToRows, false in normal cases like table.vue
 const getAllColumns = (cols, forTableHead = false) => {

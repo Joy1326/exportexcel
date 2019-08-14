@@ -9,9 +9,6 @@ import exportExcell from "../lib/export";
 import list from "./data";
 export default {
   name: "HelloWorld",
-  props: {
-    msg: String
-  },
   methods: {
     expFn() {
       exportExcell({
@@ -22,6 +19,16 @@ export default {
                 {
                   columns: this.getColumns("第一个"),
                   data: list,
+                  space: {
+                    left: 2,
+                    top: 3,
+                    bottom: 4,
+                    right: 1
+                  },
+                  origin: {
+                    r: 5,
+                    c: 19
+                  },
                   mergeCells: params => {
                     let { key, keyIndex, row, rowIndex } = params;
                     if (rowIndex === 8 && key === "C") {
@@ -36,6 +43,10 @@ export default {
                 {
                   columns: this.getColumns2(),
                   data: list,
+                  space: {
+                    left: 1,
+                    right: 1
+                  },
                   mergeCells: params => {
                     let { key, keyIndex, row, rowIndex } = params;
                     if (rowIndex === 2 && key === "A") {
@@ -60,7 +71,10 @@ export default {
               [
                 {
                   columns: this.getColumns("第四个"),
-                  data: list
+                  data: list,
+                  origin: {
+                    c: 29
+                  }
                 },
                 {
                   columns: this.getColumns2(),
@@ -82,6 +96,18 @@ export default {
                 }
               ]
             ],
+            props: {
+              properties: {
+                tabColor: { argb: "FFC0000" }
+              },
+              views: [
+                {
+                  state: "frozen",
+                  xSplit: 2,
+                  ySplit: 3
+                }
+              ]
+            },
             sheetName: "Sheet1"
           },
           {
@@ -89,7 +115,11 @@ export default {
               [
                 {
                   columns: this.getColumns(),
-                  data: list
+                  data: list,
+                  origin: {
+                    r: 24,
+                    c: 14
+                  }
                 },
                 {
                   columns: this.getColumns2(),
@@ -117,6 +147,10 @@ export default {
                 {
                   columns: this.getColumns2(),
                   data: list,
+                  origin: {
+                    r: 3,
+                    c: 22
+                  },
                   mergeCells: params => {
                     let { key, keyIndex, row, rowIndex } = params;
                     if (rowIndex === 8 && key === "D") {
@@ -147,8 +181,7 @@ export default {
       return [
         {
           type: "index",
-          title: "序号",
-          key: "D"
+          title: "序号"
         },
         {
           title: "标题A",
@@ -240,7 +273,15 @@ export default {
         },
         {
           title: "标题A",
-          key: "A"
+          key: "A",
+          fmt: opt => {
+            let { row } = opt;
+            return {
+              text: row.A,
+              hyperlink: "http://www.baidu.com",
+              tooltip: "www.baidu.com"
+            };
+          }
         },
         {
           title: "标题B",

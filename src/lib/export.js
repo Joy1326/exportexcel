@@ -1,7 +1,7 @@
 import Excel from 'exceljs';
 import { saveAs } from 'file-saver';
 // import Range from 'exceljs/dist/es5/doc/range';
-import { convertToRows, getAllColumns } from './utils';
+import { convertToRows, getAllColumns,typeOf } from './utils';
 // window.Range = Range;
 let TMP_MERGECELLINFO = {};//保存单元格合并信息，用于覆盖后面单元格值
 function exportExcell(opt = {}) {
@@ -34,8 +34,8 @@ function createWorkSheets(workbook, sheets) {
     sheets.forEach((sheet, index) => {
         try {
             TMP_MERGECELLINFO = {};
-            let { tables, sheetName = `Sheet${index + 1}` } = sheet;
-            let worksheet = addWorksheet(workbook, sheetName);
+            let { tables, sheetName = `Sheet${index + 1}`,props } = sheet;
+            let worksheet = addWorksheet(workbook, sheetName,props);
             createTablesOfSheet(worksheet, tables);
         } catch (error) {
             // eslint-disable-next-line no-console
@@ -62,9 +62,21 @@ function getMax(number1, number2) {
     return Math.max(number1, number2);
 }
 function createAndAppendTable(worksheet, table, tableConf) {
-    let { columns = [], data = [], mergeCells } = table;
+    let { columns = [], data = [], mergeCells, space, origin } = table;
     let { cell, merges, cellLen, rowsLen } = convertToRows(columns);
     let { startC, startR, maxRowsCount } = tableConf;
+    let { left = 0, top = 0, bottom = 0, right = 0 } = space || {};
+    let hasOrigin = false;
+    if (origin&&typeOf(origin)==='object') {
+        hasOrigin = true;
+        let { r = 0, c = 0 } = origin;
+        startC = c > 0 ? c - 1 : 0;
+        startR = r > 0 ? r - 1 : 0;
+    }
+
+    startC += left;
+    startR += top;
+    // 头部标题
     cell.forEach(item => {
         let { col, title } = item;
         let _startC = startC + col.c + 1;
@@ -72,9 +84,16 @@ function createAndAppendTable(worksheet, table, tableConf) {
         worksheet.getCell(_startR, _startC).value = title;
     });
     setHeaderMerge(worksheet, merges, startR, startC);
+    // 内容数据
     fillData(worksheet, columns, data, startR + rowsLen, startC, mergeCells);
-    tableConf.startC += cellLen;
-    tableConf.maxRowsCount = getMax(maxRowsCount, rowsLen + data.length);
+    let nextHorTableStart = rowsLen + data.length + bottom + top;
+    let nextColumnTableStart = cellLen + left + right;
+    if (hasOrigin) {
+        nextHorTableStart = 0;
+        nextColumnTableStart = 0;
+    }
+    tableConf.startC += nextColumnTableStart;
+    tableConf.maxRowsCount = getMax(maxRowsCount, nextHorTableStart);
 }
 function setBodyMerge(worksheet, mergeCells, startR, startC) {
     let { rowspan = 1, colspan = 1 } = mergeCells;
@@ -97,22 +116,22 @@ function fillData(worksheet, columns, data = [], startR, startC, mergeCells) {
     let allColumns = getAllColumns(columns);
     data.forEach((item, rowIndex) => {
         allColumns.forEach((colItem, index) => {
-            let { key,cellStyle} = colItem;
+            let { key, cellStyle } = colItem;
             let _startR = rowIndex + 1 + startR;
             let _startC = index + 1 + startC;
             let cell = worksheet.getCell(_startR, _startC);
-            let value = getValue(item, colItem, rowIndex)||'';
+            let value = getValue(item, colItem, rowIndex) || '';
             cell.value = value;
-            if (mergeCells&&typeof mergeCells === 'function') {
+            if (mergeCells && typeOf(mergeCells) === 'function') {
                 let mergeCell = mergeCells({ row: item, rowIndex, key, keyIndex: index });
                 if (mergeCell) {
                     TMP_MERGECELLINFO[cell.address] = value;
                     setBodyMerge(worksheet, mergeCell, _startR, _startC);
                 }
             }
-            if (cellStyle && typeof cellStyle === 'function') {
+            if (cellStyle && typeOf(cellStyle) === 'function') {
                 // {font,numFmt,alignment,border,fill}
-                setBodyStyle(cell,cellStyle,colItem,item,rowIndex);
+                setBodyStyle(cell, cellStyle, colItem, item, rowIndex);
             }
         });
     });
@@ -124,22 +143,22 @@ function fillData(worksheet, columns, data = [], startR, startC, mergeCells) {
 function setBodyStyle(cell, cellStyle, col, row, rowIndex) {
     try {
         let { key, title, params } = col;
-    let { font, numFmt, alignment, border, fill } = cellStyle({ row, rowIndex, column: { key, title, params } }) || {};
-    if (font) {
-        cell.font = font;
-    }
-    if (numFmt) {
-        cell.numFmt = numFmt;
-    }
-    if (alignment) {
-        cell.alignment = alignment;
-    }
-    if (border) {
-        cell.border = border;
-    }
-    if (fill) {
-        cell.fill = fill;
-    }
+        let { font, numFmt, alignment, border, fill } = cellStyle({ row, rowIndex, column: { key, title, params } }) || {};
+        if (font) {
+            cell.font = font;
+        }
+        if (numFmt) {
+            cell.numFmt = numFmt;
+        }
+        if (alignment) {
+            cell.alignment = alignment;
+        }
+        if (border) {
+            cell.border = border;
+        }
+        if (fill) {
+            cell.fill = fill;
+        }
     } catch (error) {
         // eslint-disable-next-line no-console
         console.error(error);
@@ -149,12 +168,12 @@ function getValue(row, col, rowIndex) {
     try {
         let value = '';
         let { key, fmt, title, params, type } = col;
-        value = fmt && typeof fmt === 'function' && fmt({ row, rowIndex, column: { key, title, params } }) || key && row[key] || type && type === 'index' && rowIndex + 1 || '';
+        value = fmt && typeOf(fmt) === 'function' && fmt({ row, rowIndex, column: { key, title, params } }) || key && row[key] || type && type === 'index' && rowIndex + 1 || '';
         return value;
     } catch (error) {
         // eslint-disable-next-line no-console
         console.error(error);
-    } 
+    }
 }
 function setHeaderMerge(worksheet, merges = [], startR, startC) {
     merges.forEach(item => {
@@ -167,8 +186,8 @@ function setHeaderMerge(worksheet, merges = [], startR, startC) {
         }
     });
 }
-function addWorksheet(workbook, sheetName) {
-    return workbook.addWorksheet(sheetName);
+function addWorksheet(workbook, sheetName,props={}) {
+    return workbook.addWorksheet(sheetName,props);
 }
 function initWorkBookViews(workbook) {
     workbook.views = [
