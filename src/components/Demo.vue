@@ -1,11 +1,16 @@
 <template>
   <div class="hello">
     <button @click="expFn">导出</button>
+    <button @click="useWorkerExpFn">worker导出</button>
   </div>
 </template>
 
 <script>
-import exportExcell, { getBase64Image } from "../lib/export";
+import exportExcel, {
+  getBase64Image,
+  canExport,
+  exportExcelUseWorker
+} from "../lib/export";
 import list from "./data";
 import img from "../assets/bg.jpg";
 import img1 from "../assets/logo.png";
@@ -13,9 +18,20 @@ export default {
   name: "HelloWorld",
   methods: {
     async expFn() {
+      if (!canExport()) {
+        return;
+      }
+      let sheet = await this.getSheet();
+      exportExcel(sheet);
+    },
+    async useWorkerExpFn() {
+      let sheet = await this.getSheet();
+      exportExcelUseWorker(sheet);
+    },
+    async getSheet() {
       let base64Img = await getBase64Image(img, "jpeg", 0.8);
       let wsbase64Img = await getBase64Image(img1, "jpeg", 0.8);
-      exportExcell({
+      return {
         sheets: [
           {
             tables: [
@@ -152,7 +168,23 @@ export default {
                 },
                 {
                   columns: this.getColumns2(),
-                  data: list
+                  data: list,
+                  rowStyle: opt => {
+                    let { rowIndex } = opt;
+                    if (rowIndex === 2 || rowIndex === 8) {
+                      return {
+                        fill: {
+                          type: "gradient",
+                          gradient: "path",
+                          center: { left: 0.5, top: 0.5 },
+                          stops: [
+                            { position: 0, color: { argb: "FFFF0000" } },
+                            { position: 1, color: { argb: "FF00FF00" } }
+                          ]
+                        }
+                      };
+                    }
+                  }
                 },
                 {
                   columns: this.getColumns(),
@@ -171,7 +203,23 @@ export default {
               [
                 {
                   columns: this.getColumns(),
-                  data: list
+                  data: list,
+                  rowStyle: opt => {
+                    let { rowIndex } = opt;
+                    if (rowIndex === 2 || rowIndex === 8) {
+                      return {
+                        fill: {
+                          type: "gradient",
+                          gradient: "path",
+                          center: { left: 0.5, top: 0.5 },
+                          stops: [
+                            { position: 0, color: { argb: "FFFF0000" } },
+                            { position: 1, color: { argb: "FF00FF00" } }
+                          ]
+                        }
+                      };
+                    }
+                  }
                 },
                 {
                   columns: this.getColumns2(),
@@ -189,6 +237,22 @@ export default {
                         colspan: 3
                       };
                     }
+                  },
+                  rowStyle: opt => {
+                    let { rowIndex } = opt;
+                    if (rowIndex === 2 || rowIndex === 8) {
+                      return {
+                        fill: {
+                          type: "gradient",
+                          gradient: "path",
+                          center: { left: 0.5, top: 0.5 },
+                          stops: [
+                            { position: 0, color: { argb: "FFFF0000" } },
+                            { position: 1, color: { argb: "FF00FF00" } }
+                          ]
+                        }
+                      };
+                    }
                   }
                 },
                 {
@@ -202,7 +266,7 @@ export default {
                 base64: wsbase64Img,
                 range: {
                   tl: { col: 0, row: 0 },
-                  br:{col:4,row:4},
+                  br: { col: 4, row: 4 },
                   ext: { width: 500, height: 200 }
                 }
               },
@@ -210,8 +274,8 @@ export default {
                 base64: wsbase64Img,
                 range: {
                   tl: { col: 10, row: 0 },
-                  br:{col:14,row:6},
-                  editAs:'absolute'
+                  br: { col: 14, row: 6 },
+                  editAs: "absolute"
                 }
               }
             ],
@@ -219,7 +283,51 @@ export default {
           }
         ],
         fileName: "文件名"
-      });
+      };
+    },
+    async getSheet1() {
+      return {
+        sheets: [
+          {
+            tables: [
+              [
+                {
+                  columns: this.getColumns3(),
+                  data: list,
+                  mergeCells: params => {
+                    let { key, keyIndex, row, rowIndex } = params;
+                    if (rowIndex === 8 && key === "C") {
+                      // console.log(params)
+                      return {
+                        rowspan: 3,
+                        colspan: 5
+                      };
+                    }
+                  },
+                  rowStyle: opt => {
+                    let { rowIndex } = opt;
+                    if (rowIndex === 2 || rowIndex === 8) {
+                      return {
+                        fill: {
+                          type: "gradient",
+                          gradient: "path",
+                          center: { left: 0.5, top: 0.5 },
+                          stops: [
+                            { position: 0, color: { argb: "FFFF0000" } },
+                            { position: 1, color: { argb: "FF00FF00" } }
+                          ]
+                        }
+                      };
+                    }
+                  }
+                }
+              ]
+            ],
+            sheetName: "gg"
+          }
+        ],
+        fileName: "worker_test"
+      };
     },
     getColumns(num = "gg") {
       let obj = {
@@ -295,7 +403,19 @@ export default {
         },
         {
           title: "标题C",
-          key: "C"
+          key: "C",
+          cellStyle: opt => {
+            if (opt.rowIndex === 8) {
+              return {
+                fill: {
+                  type: "pattern",
+                  pattern: "darkTrellis",
+                  fgColor: { argb: "FFFFFF00" },
+                  bgColor: { argb: "FF0000FF" }
+                }
+              };
+            }
+          }
         },
         {
           title: "标题D",
@@ -336,7 +456,19 @@ export default {
         },
         {
           title: "标题D",
-          key: "D"
+          key: "D",
+          cellStyle: opt => {
+            if (opt.rowIndex === 8) {
+              return {
+                fill: {
+                  type: "pattern",
+                  pattern: "darkTrellis",
+                  fgColor: { argb: "FFFFFF00" },
+                  bgColor: { argb: "FF0000FF" }
+                }
+              };
+            }
+          }
         },
         {
           title: "标题E",
@@ -359,6 +491,46 @@ export default {
               ]
             }
           ]
+        }
+      ];
+    },
+    getColumns3() {
+      return [
+        {
+          title: "序号",
+          key: "index"
+        },
+        {
+          title: "标题A",
+          key: "A",
+          fmt: opt => {
+            let { row } = opt;
+            return {
+              text: row.A,
+              hyperlink: "http://www.baidu.com",
+              tooltip: "www.baidu.com"
+            };
+          }
+        },
+        {
+          title: "标题B",
+          key: "B"
+        },
+        {
+          title: "标题D",
+          key: "D",
+          cellStyle: opt => {
+            if (opt.rowIndex === 8) {
+              return {
+                fill: {
+                  type: "pattern",
+                  pattern: "darkTrellis",
+                  fgColor: { argb: "FFFFFF00" },
+                  bgColor: { argb: "FF0000FF" }
+                }
+              };
+            }
+          }
         }
       ];
     }

@@ -1,72 +1,39 @@
-import Excel from 'exceljs';
-import { saveAs } from 'file-saver';
-import { convertToRows, getAllColumns, typeOf } from './utils';
-import { fmtFn } from './fmtfn';
-let TMP_MERGECELLINFO = {};//保存单元格合并信息，用于覆盖后面单元格值
-export default function exportExcel(opt = {}) {
+importScripts('./exceljs.min.js');
+importScripts('./utils.js');
+let TMP_MERGECELLINFO = {};
+self.onmessage = function (evt) {
+    let { opt } = evt.data;
     let { fileName = '下载', sheets = [], suffixName = "xlsx" } = opt;
     // let workbookConf = {};
     let workbook = createWorkBook();
     initWorkBookViews(workbook);
     createWorkSheets(workbook, sheets);
-    toSaveAsFn(workbook, fileName + '.' + suffixName);
-}
-export function exportExcelUseWorker(opt = {}) {
-    return new Promise((resolve, reject) => {
-        try {
-            let worker = new Worker('./export/export.worker.js');
-            fmtFn(opt);
-            worker.postMessage({ opt });
-            worker.onmessage = function (evt) {
-                let { buffer, fileName, success } = evt.data;
-                if (success===1) {
-                    toSaveAs(buffer, fileName);
-                    resolve({ success });
-                } else {
-                    reject({ success });
-                }
-            };
-        } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(error);
-            reject(error);
-        }
-    });
-}
-
-function canExport(showTip = true, msg = "该浏览器不支持前端导出功能，请升级浏览器！") {
-    let canExp = true;
-    if (typeOf(Worker) === 'undefined') {
-        canExp = false;
-        if (showTip) {
-            alert(msg);
-        }
-    }
-    return canExp;
-}
-export { canExport };
-function toSaveAsFn(workbook, fileName) {
     let clearFn = () => {
         TMP_MERGECELLINFO = null;
         workbook = null;
     };
-    try {
-        getWriteBuffer(workbook).then(buffer => {
-            toSaveAs(buffer, fileName);
-            clearFn();
-        }).catch(e => {
-            // eslint-disable-next-line no-console
-            console.error(e);
-            clearFn();
+    getWriteBuffer(workbook).then(buffer => {
+        clearFn();
+        self.postMessage({
+            buffer: buffer,
+            fileName: fileName + '.' + suffixName,
+            success: 1
         });
-    } catch (error) {
+    }).catch(error => {
         // eslint-disable-next-line no-console
         console.error(error);
         clearFn();
-    }
+        self.postMessage({
+            success: 0
+        });
+    });
+};
+function evalFcn(fn) {
+    var Fn = Function; //一个变量指向Function，防止有些前端编译工具报错
+    return new Fn('return ' + fn)();
 }
-function toSaveAs(buffer,fileName) {
-    saveAs(new Blob([buffer]), fileName);
+function createWorkBook() {
+    return new ExcelJS.Workbook();
 }
 function getWriteBuffer(workbook) {
     return new Promise((resolve, reject) => {
@@ -80,37 +47,6 @@ function getWriteBuffer(workbook) {
                 reject(err);
             });
     });
-}
-function getUrlBase64(img, extension, quality = 1) {
-    let canvas = document.createElement("canvas");
-    canvas.width = img.width;
-    canvas.height = img.height;
-    let ctx = canvas.getContext("2d");
-    ctx.drawImage(img, 0, 0, img.width, img.height);
-    let ext = extension || img.src.substring(img.src.lastIndexOf(".") + 1).toLowerCase();
-    // toDataURL方法，可以是image/jpeg或image/webp,默认image/png
-    let dataURL = canvas.toDataURL("image/" + ext, quality);
-    return dataURL;
-}
-async function loadImage(src) {
-    return new Promise((resolve, reject) => {
-        let img = new Image();
-        img.src = src;
-        img.onload = function () {
-            resolve(img);
-        };
-        img.onerror = function (error) {
-            reject(error);
-        };
-    });
-}
-async function getBase64Image(imgSrc, extension = '', quality = 1) {
-    let img = await loadImage(imgSrc);
-    return getUrlBase64(img, extension, quality);
-}
-export { getBase64Image };
-function createWorkBook() {
-    return new Excel.Workbook();
 }
 function createWorkSheets(workbook, sheets) {
     sheets.forEach((sheet, index) => {
@@ -197,6 +133,12 @@ function getMax(number1, number2) {
 }
 function createAndAppendTable(worksheet, table, tableConf) {
     let { columns = [], data = [], mergeCells, space, origin, rowStyle } = table;
+    if (mergeCells) {
+        mergeCells = evalFcn(mergeCells);
+    }
+    if (rowStyle) {
+        rowStyle = evalFcn(rowStyle);
+    }
     let { cell, merges, cellLen, rowsLen } = convertToRows(columns);
     let { startC, startR, maxRowsCount } = tableConf;
     let { left = 0, top = 0, bottom = 0, right = 0 } = space || {};
@@ -251,6 +193,9 @@ function fillData(worksheet, columns, data = [], startR, startC, mergeCells, row
     data.forEach((item, rowIndex) => {
         allColumns.forEach((colItem, index) => {
             let { key, cellStyle } = colItem;
+            if (cellStyle) {
+                cellStyle = evalFcn(cellStyle);
+            }
             let _startR = rowIndex + 1 + startR;
             let _startC = index + 1 + startC;
             let cell = worksheet.getCell(_startR, _startC);
@@ -314,6 +259,9 @@ function getValue(row, col, rowIndex) {
     try {
         let value = '';
         let { key, fmt, title, params, type } = col;
+        if(fmt){
+            fmt = evalFcn(fmt);
+        }
         value = fmt && typeOf(fmt) === 'function' && fmt({ row, rowIndex, column: { key, title, params } }) || key && row[key] || type && type === 'index' && rowIndex + 1 || '';
         return value;
     } catch (error) {
