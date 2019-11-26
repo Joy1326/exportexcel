@@ -1,13 +1,13 @@
 /* eslint-disable no-console */
-import { isEmpty,colCache } from './utils';
-export function getTableJson(table) {
+import { isEmpty,encodeAddress2 } from './utils';
+export function getTableJson(table,{startRow=0,startCol=0}={startRow:0,startCol:0}) {
     try {
-        let headJson = getTableHeaderJson(table);
-        let bodyJson = getTableBodyJson(table, { startRow: headJson.len.r });
+        let headJson = getTableHeaderJson(table,{startRow,startCol});
+        let bodyJson = getTableBodyJson(table, { startRow: headJson.len.r+startRow,startCol });
         return {
             len: {
                 r: headJson.len.r + bodyJson.len.r,
-                c: headJson.len.c + bodyJson.len.c
+                c: headJson.len.c?headJson.len.c:bodyJson.len.c
             },
             cellInfo: { ...bodyJson.cellInfo, ...headJson.cellInfo },
             mergeInfo: [...bodyJson.mergeInfo, ...headJson.mergeInfo]
@@ -284,12 +284,7 @@ function fillCellValue(cell, cellOpt, rowIndex, opt, { startRow = 0, startCol = 
 //         }
 //     }
 // }
-function encodeAddress2(row, col) {
-    return encodeAddress(row + 1, col + 1);
-}
-function encodeAddress(row, col) {
-    return colCache.encodeAddress(row, col);
-}
+
 function getCellElText(cell) {
     return cell.innerText;
 }

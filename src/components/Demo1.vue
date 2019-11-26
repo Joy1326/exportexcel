@@ -4,6 +4,10 @@
       <button @click="expFn(1)">dom导出</button>
       <button @click="expFn(2)">dom导出-no body</button>
       <button @click="expFn(3)">dom导出-no header</button>
+      <button @click="expFnObj">dom导出tableObj</button>
+      <button @click="expFnObjMergeHeader">dom导出tableObjMergeHeader</button>
+      <button @click="expFnSheets">dom导出expFnSheets</button>
+      <button @click="expFnSheetsFromExcel">expFnSheetsFromExcel</button>
     </div>
     <div>
       <table ref="table">
@@ -108,7 +112,10 @@
   </div>
 </template>
 <script>
-import exportExcel, { tableToJson } from "../lib/excel/dom";
+import exportExcel, {
+  tableToJson,
+  readWorkbookFromRemoteFile
+} from "../lib/excel/export";
 export default {
   data() {
     let data = this.getData();
@@ -129,8 +136,94 @@ export default {
           : index === 2
           ? table.querySelector("thead")
           : table.querySelector("tbody");
-          console.log(el)
+      console.log(el);
       exportExcel(el);
+    },
+    expFnObj() {
+      exportExcel({
+        table: {
+          header: this.getHead1()
+        }
+      });
+    },
+    expFnObjMergeHeader() {
+      exportExcel({
+        table: {
+          header: this.getHead2(),
+          data: this.getData(),
+          mergeCells({ rowIndex, key }) {
+            if (rowIndex === 3 && key === "G") {
+              return {
+                colspan: 3
+              };
+            }
+            if (rowIndex === 4 && key === "C") {
+              return {
+                rowspan: 2
+              };
+            }
+            if (rowIndex === 2 && key === "I") {
+              return {
+                colspan: 2,
+                rowspan: 3
+              };
+            }
+          }
+        }
+      });
+    },
+    expFnSheets() {
+      exportExcel({
+        sheets: [
+          {
+            tables: [
+              [
+                this.getRefTable(),
+                {
+                  header: this.getHead2(),
+                  data: this.getData(),
+                  mergeCells({ rowIndex, key }) {
+                    if (rowIndex === 3 && key === "G") {
+                      return {
+                        colspan: 3
+                      };
+                    }
+                    if (rowIndex === 4 && key === "C") {
+                      return {
+                        rowspan: 2
+                      };
+                    }
+                    if (rowIndex === 2 && key === "I") {
+                      return {
+                        colspan: 2,
+                        rowspan: 3
+                      };
+                    }
+                  }
+                }
+              ],
+              [this.getRefTable(), this.getRefTable()]
+            ],
+            sheetname: "Sheet1"
+          }
+        ]
+      });
+    },
+    async expFnSheetsFromExcel() {
+      let wk = await readWorkbookFromRemoteFile("./a.xlsx");
+      if (!wk) {
+        return;
+      }
+      exportExcel(
+        {
+          sheets: [
+            {
+              tables: [[this.getRefTable()]]
+            }
+          ]
+        },
+        { workbook: wk }
+      );
     },
     getRefTable() {
       return this.$refs.table;
@@ -150,12 +243,98 @@ export default {
         filename: "下载"
       };
     },
+    getHead1() {
+      return [
+        {
+          key: "A",
+          title: "A-title"
+        },
+        {
+          key: "B",
+          title: "B-title"
+        },
+        {
+          key: "C",
+          title: "C-title"
+        },
+        {
+          key: "D",
+          title: "D-title"
+        },
+        {
+          key: "E",
+          title: "E-title"
+        },
+        {
+          key: "F",
+          title: "F-title"
+        }
+      ];
+    },
+    getHead2() {
+      return [
+        {
+          key: "A",
+          title: "A-title"
+        },
+        {
+          key: "B",
+          title: "B-title",
+          children: [
+            {
+              key: "G",
+              title: "G-title"
+            },
+            {
+              key: "H",
+              title: "H-title"
+            }
+          ]
+        },
+        {
+          key: "C",
+          title: "C-title"
+        },
+        {
+          key: "D",
+          title: "D-title"
+        },
+        {
+          key: "E",
+          title: "E-title",
+          children: [
+            {
+              key: "I",
+              title: "I-title"
+            },
+            {
+              key: "J",
+              title: "J-title",
+              children: [
+                {
+                  key: "K",
+                  title: "K-title"
+                }
+              ]
+            },
+            {
+              key: "L",
+              title: "L-title"
+            }
+          ]
+        },
+        {
+          key: "F",
+          title: "F-title"
+        }
+      ];
+    },
     getData() {
       let data = [];
       for (let i = 0; i < 10; i++) {
         let keyMap = {};
-        for (let j = 0; j < 8; j++) {
-          let key = String.fromCharCode(65 + j).toLowerCase();
+        for (let j = 0; j < 18; j++) {
+          let key = String.fromCharCode(65 + j).toUpperCase();
           keyMap[key] = key + i + "-value";
         }
         data.push(keyMap);
