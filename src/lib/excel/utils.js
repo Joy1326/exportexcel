@@ -1,7 +1,11 @@
 /* eslint-disable no-console */
 import colCache from 'exceljs/lib/utils/col-cache';
+window.colCache = colCache;
 export function isDOM(str) {
     return str instanceof HTMLElement;
+}
+export function isString(str) {
+    return typeOf(str) === 'string';
 }
 export function isObject(str) {
     return typeOf(str) === 'object';
@@ -20,6 +24,9 @@ export function encodeAddress2(row, col) {
 }
 export function encodeAddress(row, col) {
     return colCache.encodeAddress(row, col);
+}
+export function decodeAddress(value) {
+    return colCache.decodeAddress(value);
 }
 function typeOf(obj) {
     const toString = Object.prototype.toString;
@@ -75,14 +82,41 @@ export function getAllColumns(cols, forTableHead = false) {
     });
     return result;
 }
+// export function getKeys(columns) {
+//     let keys = [];
+//     let allColumns = getAllColumns(columns);
+//     for (let i = 0, len = allColumns.length; i < len; i++) {
+//         let { key } = allColumns[i];
+//         keys.push(key);
+//     }
+//     return keys;
+// }
+
 export function getKeys(columns) {
     let keys = [];
     let allColumns = getAllColumns(columns);
-    for (let i = 0, len = allColumns.length; i < len; i++){
-        let { key } = allColumns[i];
-        keys.push(key);
+    for (let i = 0, len = allColumns.length; i < len; i++) {
+        // let { key, fmt,cellStyle } = allColumns[i];
+        let opt = allColumns[i];
+        removeSomeFcn(opt);
+        keys.push(opt);
+        // keys.push({
+        //     key,
+        //     fmt,
+        //     cellStyle
+        // });
     }
     return keys;
+}
+function removeSomeFcn(opt) {
+    for (let o in opt) {
+        if (isFunction(opt[o])) {
+            if (o === 'fmt' || o === 'cellStyle') {
+                continue;
+            }
+            delete opt[o];
+        }
+    }
 }
 
 export function convertToRows(columns, { startRow = 0, startCol = 0 } = { startRow: 0, startCol: 0 }) {
@@ -141,8 +175,8 @@ export function convertToRows(columns, { startRow = 0, startCol = 0 } = { startR
                     //     r: level - 1 + rowSpan,
                     //     c: INDEX + colSpan
                     // },
-                    s: encodeAddress2(level - 1+startRow, INDEX+startCol),
-                    e: encodeAddress2(level - 1 + rowSpan+startRow, INDEX + colSpan+startCol)
+                    s: encodeAddress2(level - 1 + startRow, INDEX + startCol),
+                    e: encodeAddress2(level - 1 + rowSpan + startRow, INDEX + colSpan + startCol)
                 });
             }
             // cell.push({
@@ -156,7 +190,7 @@ export function convertToRows(columns, { startRow = 0, startCol = 0 } = { startR
             // rowSpan: rowSpan
 
             // });
-            cellInfo[encodeAddress2(level - 1+startRow, INDEX+startCol)] = column.title;
+            cellInfo[encodeAddress2(level - 1 + startRow, INDEX + startCol)] = column.title;
             if (column.children) {
                 column.rowSpan = 1;
                 INDEX--;

@@ -182,27 +182,67 @@ export default {
                 {
                   header: this.getHead2(),
                   data: this.getData(),
-                  mergeCells({ rowIndex, key }) {
-                    if (rowIndex === 3 && key === "G") {
+                  space: {
+                    bottom: 2
+                  },
+                  origin: {
+                    col: 14,
+                    row: 2
+                  }
+                  // mergeCells({ rowIndex, key }) {
+                  //   if (rowIndex === 3 && key === "G") {
+                  //     return {
+                  //       colspan: 3
+                  //     };
+                  //   }
+                  //   if (rowIndex === 4 && key === "C") {
+                  //     return {
+                  //       rowspan: 2
+                  //     };
+                  //   }
+                  //   if (rowIndex === 2 && key === "I") {
+                  //     return {
+                  //       colspan: 2,
+                  //       rowspan: 3
+                  //     };
+                  //   }
+                  // }
+                }
+              ],
+              [
+                this.getRefTable(),
+                {
+                  header: this.getHead2(),
+                  data: this.getData(),
+                  space: {
+                    right: 3
+                  },
+                  origin: "M27",
+                  rowStyle({ rowIndex, key }) {
+                    if (rowIndex === 2) {
                       return {
-                        colspan: 3
+                        font: {
+                          name: "Arial Black",
+                          color: { argb: "FF00FF00" },
+                          family: 2,
+                          size: 14,
+                          italic: true
+                        }
                       };
                     }
-                    if (rowIndex === 4 && key === "C") {
+                    if (rowIndex === 4) {
                       return {
-                        rowspan: 2
-                      };
-                    }
-                    if (rowIndex === 2 && key === "I") {
-                      return {
-                        colspan: 2,
-                        rowspan: 3
+                        fill: {
+                          type: "pattern",
+                          pattern: "darkVertical",
+                          fgColor: { argb: "FFFF0000" }
+                        }
                       };
                     }
                   }
-                }
-              ],
-              [this.getRefTable(), this.getRefTable()]
+                },
+                this.getRefTable()
+              ]
             ],
             sheetname: "Sheet1"
           }
@@ -305,7 +345,24 @@ export default {
           children: [
             {
               key: "I",
-              title: "I-title"
+              title: "I-title",
+              gg(){},
+              cellStyle({ rowIndex}) {
+                if (rowIndex === 2) {
+                  return {
+                    font: {
+                      color: { argb: "FFFF0000" }
+                    }
+                  };
+                }
+                if(rowIndex===6){
+                  return {
+                    font: {
+                      color: { argb: "FFFF0000" }
+                    }
+                  }
+                }
+              }
             },
             {
               key: "J",
