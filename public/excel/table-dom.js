@@ -6,6 +6,8 @@ export function getTableJson(table,{startRow=0,startCol=0}={startRow:0,startCol:
         let bodyJson = getTableBodyJson(table, { startRow: headJson.len.r+startRow,startCol });
         return {
             len: {
+                header: headJson.len.r,
+                body:bodyJson.len.r,
                 r: headJson.len.r + bodyJson.len.r,
                 c: headJson.len.c?headJson.len.c:bodyJson.len.c
             },

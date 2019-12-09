@@ -1,15 +1,24 @@
 <template>
   <div>
-    <div>
-      <button @click="expFn(1)">dom导出</button>
-      <button @click="expFn(2)">dom导出-no body</button>
-      <button @click="expFn(3)">dom导出-no header</button>
-      <button @click="expFnObj">dom导出tableObj</button>
-      <button @click="expFnObjMergeHeader">dom导出tableObjMergeHeader</button>
-      <button @click="expFnSheets">dom导出expFnSheets</button>
-      <button @click="expFnSheetsFromExcel">expFnSheetsFromExcel</button>
-    </div>
-    <div>
+    <h2>table</h2>
+    <div class="card">
+      <div>
+        <input
+          type="button"
+          @click="tableExport(1)"
+          value="table导出"
+        >
+        <input
+          type="button"
+          @click="tableExport(2)"
+          value="table导出(自定义sheetname和filename)"
+        >
+        <input
+          type="button"
+          @click="tableExport(3)"
+          value="table导出(对象配置方式)"
+        >
+      </div>
       <table ref="table">
         <thead>
           <tr>
@@ -109,302 +118,178 @@
         </tbody>
       </table>
     </div>
+    <h2>tables</h2>
+    <div class="card">
+      <input
+        type="button"
+        @click="tablesExport(1)"
+        value="tables导出"
+      >
+    </div>
   </div>
 </template>
 <script>
-import exportExcel, {
-  tableToJson,
-  readWorkbookFromRemoteFile
-} from "../lib/excel/export";
+import exportExcel, { readWorkbookFromRemoteFile } from "../lib/excel";
 export default {
-  data() {
-    let data = this.getData();
-    return {
-      header: data.slice(0, 1),
-      body: data.slice(1)
-    };
-  },
   methods: {
-    expFn(index) {
-      //   let datas = tableToJson(this.$refs.table);
-      //   console.log(datas)
-      // exportExcel(this.getSheets());
-      let table = this.getRefTable();
-      let el =
-        index === 1
-          ? table
-          : index === 2
-          ? table.querySelector("thead")
-          : table.querySelector("tbody");
-      console.log(el);
-      exportExcel(el);
+    getTable() {
+      return this.$refs.table;
     },
-    expFnObj() {
-      exportExcel({
-        table: {
-          header: this.getHead1()
-        }
-      });
+    tableExport(type) {
+      switch (type) {
+        case 1:
+          exportExcel({
+            table: this.getTable()
+          });
+          break;
+        case 2:
+          exportExcel({
+            table: this.getTable(),
+            sheetname: "mysheet",
+            filename: "测试"
+          });
+          break;
+        case 3:
+          exportExcel({
+            table: {
+              header: this.getHeader(),
+              data: this.getData()
+            }
+          });
+          break;
+        default:
+          break;
+      }
     },
-    expFnObjMergeHeader() {
-      exportExcel({
-        table: {
-          header: this.getHead2(),
-          data: this.getData(),
-          mergeCells({ rowIndex, key }) {
-            if (rowIndex === 3 && key === "G") {
-              return {
-                colspan: 3
-              };
-            }
-            if (rowIndex === 4 && key === "C") {
-              return {
-                rowspan: 2
-              };
-            }
-            if (rowIndex === 2 && key === "I") {
-              return {
-                colspan: 2,
-                rowspan: 3
-              };
-            }
-          }
-        }
-      });
-    },
-    expFnSheets() {
-      exportExcel({
-        sheets: [
-          {
+    tablesExport(type) {
+      switch (type) {
+        case 1:
+          exportExcel({
             tables: [
               [
-                this.getRefTable(),
+                this.getTable(),
                 {
-                  header: this.getHead2(),
-                  data: this.getData(),
+                  el: this.getTable(),
+                  rowStyleList:[
+{
+                      index: 3,
+                      style: {
+                        font: {
+                          color: { argb: "FFFF0000" }
+                        }
+                      }
+                    }
+                  ],
                   space: {
-                    bottom: 2
-                  },
-                  origin: {
-                    col: 14,
-                    row: 2
+                    left: 3,
+                    top: 2
                   }
-                  // mergeCells({ rowIndex, key }) {
-                  //   if (rowIndex === 3 && key === "G") {
-                  //     return {
-                  //       colspan: 3
-                  //     };
-                  //   }
-                  //   if (rowIndex === 4 && key === "C") {
-                  //     return {
-                  //       rowspan: 2
-                  //     };
-                  //   }
-                  //   if (rowIndex === 2 && key === "I") {
-                  //     return {
-                  //       colspan: 2,
-                  //       rowspan: 3
-                  //     };
-                  //   }
-                  // }
                 }
               ],
               [
-                this.getRefTable(),
                 {
-                  header: this.getHead2(),
-                  data: this.getData(),
+                  el: this.getTable(),
                   space: {
-                    right: 3
+                    left: 2
                   },
-                  origin: "M27",
-                  rowStyle({ rowIndex, key }) {
-                    if (rowIndex === 2) {
-                      return {
+                  mergeCellsList:[
+                    {
+                      rowIndex:2,
+                      keyIndex:4,
+                      rowspan:2
+                    },
+                    {
+                      rowIndex:2,
+                      keyIndex:0,
+                      colspan:2
+                    }
+                  ],
+                  rowStyleList: [
+                    {
+                      index: 3,
+                      style: {
                         font: {
-                          name: "Arial Black",
-                          color: { argb: "FF00FF00" },
-                          family: 2,
-                          size: 14,
-                          italic: true
+                          color: { argb: "FFFF0000" }
                         }
-                      };
-                    }
-                    if (rowIndex === 4) {
-                      return {
-                        fill: {
-                          type: "pattern",
-                          pattern: "darkVertical",
-                          fgColor: { argb: "FFFF0000" }
+                      }
+                    },
+                    {
+                      index: 6,
+                      style: {
+                        font: {
+                          color: { argb: "FFFF0000" }
                         }
-                      };
+                      }
                     }
-                  }
-                },
-                this.getRefTable()
+                  ]
+                }
               ]
-            ],
-            sheetname: "Sheet1"
-          }
-        ]
-      });
-    },
-    async expFnSheetsFromExcel() {
-      let wk = await readWorkbookFromRemoteFile("./a.xlsx");
-      if (!wk) {
-        return;
+            ]
+          });
+          break;
       }
-      exportExcel(
-        {
-          sheets: [
-            {
-              tables: [[this.getRefTable()]]
-            }
-          ]
-        },
-        { workbook: wk }
-      );
     },
-    getRefTable() {
-      return this.$refs.table;
-    },
-    getSheets() {
-      return {
-        sheets: [
-          {
-            tables: {},
-            //{el:el,sheetname:''},{columns:[],data:[]},{keys:[],data:[],sheetname:''}
-            table: {
-              el: this.getRefTable()
-            },
-            sheetname: "Sheet1"
-          }
-        ],
-        filename: "下载"
-      };
-    },
-    getHead1() {
+    getHeader() {
       return [
         {
-          key: "A",
-          title: "A-title"
+          title: "姓名",
+          key: "name"
         },
         {
-          key: "B",
-          title: "B-title"
+          title: "年龄",
+          key: "age"
         },
         {
-          key: "C",
-          title: "C-title"
-        },
-        {
-          key: "D",
-          title: "D-title"
-        },
-        {
-          key: "E",
-          title: "E-title"
-        },
-        {
-          key: "F",
-          title: "F-title"
-        }
-      ];
-    },
-    getHead2() {
-      return [
-        {
-          key: "A",
-          title: "A-title"
-        },
-        {
-          key: "B",
-          title: "B-title",
+          title: "基本信息",
           children: [
             {
-              key: "G",
-              title: "G-title"
+              title: "地址",
+              key: "address"
             },
             {
-              key: "H",
-              title: "H-title"
-            }
-          ]
-        },
-        {
-          key: "C",
-          title: "C-title"
-        },
-        {
-          key: "D",
-          title: "D-title"
-        },
-        {
-          key: "E",
-          title: "E-title",
-          children: [
+              title: "电话",
+              key: "tel"
+            },
             {
-              key: "I",
-              title: "I-title",
-              gg(){},
-              cellStyle({ rowIndex}) {
-                if (rowIndex === 2) {
-                  return {
-                    font: {
-                      color: { argb: "FFFF0000" }
-                    }
-                  };
-                }
-                if(rowIndex===6){
-                  return {
-                    font: {
-                      color: { argb: "FFFF0000" }
-                    }
-                  }
-                }
+              title: "联系",
+              fmt: ({ row }) => {
+                return row.address + row.tel;
               }
-            },
-            {
-              key: "J",
-              title: "J-title",
-              children: [
-                {
-                  key: "K",
-                  title: "K-title"
-                }
-              ]
-            },
-            {
-              key: "L",
-              title: "L-title"
             }
           ]
-        },
-        {
-          key: "F",
-          title: "F-title"
         }
       ];
     },
     getData() {
-      let data = [];
-      for (let i = 0; i < 10; i++) {
-        let keyMap = {};
-        for (let j = 0; j < 18; j++) {
-          let key = String.fromCharCode(65 + j).toUpperCase();
-          keyMap[key] = key + i + "-value";
+      return [
+        {
+          name: "张三",
+          age: 20,
+          address: "张三地址",
+          tel: "123456"
+        },
+        {
+          name: "李四",
+          age: 33,
+          address: "李四地址",
+          tel: "8888888"
         }
-        data.push(keyMap);
-      }
-      // console.log(JSON.stringify(data))
-      return data;
+      ];
     }
   }
 };
 </script>
 <style scoped>
+.card {
+  padding: 20px;
+  margin: 6px;
+  border: 1px solid #cac9c9;
+  box-shadow: 0 0 5px 5px #c3cbce;
+  border-radius: 5px;
+}
 table {
   width: 100%;
+  margin: 5px 0;
 }
 table,
 table td,

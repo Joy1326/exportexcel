@@ -1,66 +1,55 @@
 # 基本用法
+``` js
+import exportExcel from './excel';
+
+//导出
+exportExcel(options,config);
 ```
-exportExcel(options,config?);
-```
----
-## options配置
-```
-tableElement
-```
-table或者tables必须配置一个
-```
+
+# options
+``` js
 {
-    table?:tableOptions,
-    tables?:tablesOptions,//如果是多个表格
-    sheetname?:string, // default:Sheet1
-    filename?:stirng, // default:下载
-    suffixName?:string, // default:.xlsx
-    sheetOptions?:sheetOptions
+    table?:tableProps,
+    tables?:tablesProps,
+    images?:sheetImages,
+    backgroundImage?:sheetBackgroundImage,
+    filename?:'文件名',
+    sheetname?:'工作表名',
+    suffixName?:'文件后缀名',
+    sheetProps?sheetProps,
 }
 ```
-## tableOptions配置
+# tableProps
+```js
+document.querySeletor('#table')
 ```
-tableElement
-```
-对象方式配置
-```
+```js
 {
-    keys?:[],// 如果不需要显示头部（即不配置columns）,配置显示列的数据keyName
-    header?:headerOptions,// 头部,不传时不显示头部，如果不传则必须传keys
-    data:[], // [['value1','value2']] 或者 [{key1:'value1',key2:'value2'}]
-    rowStyle?:({row,rowIndex,key,keyIndex})=>styleOptions
-    mergeCells?:({row,rowIndex,key,keyIndex})=>{rowspan?,colspan?}||[{s:{r,c},e:{r,c}}]
+    el?:document.querySeletor('#table'),
+    space?:spaceProps,
+    orgin?origProps,
+    mergeCells?:({row,rowIndex,key,keyIndex})=>{rowspan?:number,colspan?:number},
+    rowStyle?({row,rowIndex,key,keyIndex})=>style
 }
 ```
-## talbesOptions配置
-```
-[
-    [tableOptions对象方式配置,...],
-    [tableOptions对象方式配置,...]
-]
-```
-## headerOptions配置
-```
-[{
-    key:'keyName',
-    title:'title',
-    fmt:({row,rowIndex,key,keyIndex}),
-    cellStyle:({row,rowIndex,key,keyIndex})=>styleOptions
-    children:[]
-}]
-```
-## sheetOptions
-```
-//TODO
-```
-## styleOptions
-```
-//TODO
-```
-## config配置（可选）
-```
+
+# spaceProps
+设置距离边
+```js
 {
-    // TODO
-    workbookOptions
+    left:number,
+    top:number,
+    right:number,
+    bottom:number
+}
+```
+# originProps
+定位，
+```js
+"A1"
+//或者
+{
+    col:number,
+    row:number
 }
 ```

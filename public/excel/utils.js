@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 import colCache from 'exceljs/lib/utils/col-cache';
+window.colCache = colCache;
 export function isDOM(str) {
     return str instanceof HTMLElement;
 }
