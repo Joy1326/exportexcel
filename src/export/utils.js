@@ -27,6 +27,9 @@ export function encodeAddress(row, col) {
 export function decodeAddress(value) {
     return colCache.decodeAddress(value);
 }
+export function n2l(value) {
+    return colCache.n2l(value);
+}
 function typeOf(obj) {
     const toString = Object.prototype.toString;
     const map = {
@@ -44,7 +47,7 @@ function typeOf(obj) {
     return map[toString.call(obj)];
 }
 // deepCopy
-function deepCopy(data) {
+export function deepCopy(data) {
     const t = typeOf(data);
     let o;
 
@@ -67,7 +70,6 @@ function deepCopy(data) {
     }
     return o;
 }
-
 export function getAllColumns(cols, forTableHead = false) {
     const columns = deepCopy(cols);
     const result = [];
