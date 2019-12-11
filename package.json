@@ -6,7 +6,7 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "build-worker":"npx webpack src/export/export.js -o public/export-worker/lib.min.js"
+    "build-worker": "npx webpack src/export/export.js -o public/export-worker/lib.min.js"
   },
   "dependencies": {
     "core-js": "^3.4.3",

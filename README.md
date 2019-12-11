@@ -1,29 +1,46 @@
-# sheets
+# 基本使用
+## 安装依赖
 ```js
-{
-    sheets:[{
-        table?:tableDOM|| tableOptions,
-        tables?:[[tableDOM||tableOptions]],
-        ws?:ws,//TODO
-        sheetname:'sheet1'
-    }],
-    filename?:'下载'
-}
+npm install exceljs
+npm install file-saver
+```
+## 基本使用
+```js
+import exportExcel from './export';
+
+exportExcel({
+    table:this.$refs.table
+});
 ```
 # table
 ```js
 {
     table:tableDOM || tableOptions,
-    sheetname:'sheet1',
-    filename:'下载'
+    images?:imagesOptions,
+    backgroundImage?:backgroundImageOptions,
+    sheetname?:'sheet1',
+    filename?:'下载'
 }
 ```
 # tables
 ```js
 {
-    tables:[[tableDOM||tableOptions]],
-    sheetname:'sheet1',
-    filename:'下载'
+    tables:tablesOptions,
+    images?:imagesOptions,
+    backgroundImage?:backgroundImageOptions,
+    sheetname?:'sheet1',
+    filename?:'下载'
+}
+```
+# sheets
+```js
+{
+    sheets:[{
+        table?:tableDOM|| tableOptions,
+        tables?:tablesOptions,
+        sheetname?:'sheet1'
+    }],
+    filename?:'下载'
 }
 ```
 # tableOptions
@@ -33,12 +50,34 @@
     header?:,
     keys?:,
     data?:[],
-    rowStyle?:Function,
-    rowStyleList?:[],
-    mergeCells?:Function,
-    mergeCellsList?:[],
-    space?:{left,top,right,bottom},
-    origin?:'A1'
+    rowStyle?:({row,rowIndex,key,keyIndex})=>styleOptions,
+    mergeCells?:({row,rowIndex,key,keyIndex})=>{colspan?:number,rowspan?:number},
+    space?:{left?:number,top?:number,right?:number,bottom?:number},//表格间隔
+    origin?:'A1'||{col:number,row:number} // 定位到单元格
+}
+```
+# tablesOptions
+```js
+[
+    [tableDOM||tableOptions,tableDOM||tableOptions,...],
+    [...],
+    ...
+]
+
+```
+# imagesOptions
+```js
+[{
+    base64:'base64图片文件',
+    range:string,// 例如：'B1:C8',
+    extension?:'png'
+}]
+```
+# backgroundImageOptions
+```js
+{
+    base64:'base64图片文件',
+    extension?:'png'
 }
 ```
 
