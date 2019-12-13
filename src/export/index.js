@@ -2,7 +2,7 @@
 import { saveAs } from 'file-saver';
 import exportExcelFcn from './export';
 export { getBase64Image } from './image_util';
-import { isObject } from './utils';
+import { isObject,deepCopy } from './utils';
 import { forWokerData } from './workerfmt';
 export default function exportExcel(options, config = {}) {
     return new Promise((resolve, reject) => {

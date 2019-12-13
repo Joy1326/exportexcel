@@ -2,7 +2,7 @@
 import { Workbook } from 'exceljs';
 
 import { isObject, isArray, isFunction, decodeAddress, encodeAddress2, isString, convertToRows, getKeys, httpRequest } from './utils';
-if(self){
+if (self) {
     self.__exportExcel = exportExcel;
 }
 export default function exportExcel(options) {
@@ -16,7 +16,7 @@ export default function exportExcel(options) {
             return reject(new Error('options必须是object！'));
         }
         let workbook = initWorkBook();
-        let { table, tables, sheets, xlsxFile, sheetname = getNextSheetname(workbook),  sheetProps = {}, images, backgroundImage } = options;
+        let { table, tables, sheets, xlsxFile, sheetname = getNextSheetname(workbook), sheetProps = {}, images, backgroundImage } = options;
         if (xlsxFile) {
             workbook = await readWorkbookFromRemoteFile(xlsxFile, workbook);
         }
@@ -49,6 +49,24 @@ export default function exportExcel(options) {
         }
     });
 }
+function is__Fcn(fn) {
+    let isFcn = false;
+    if (isFunction(fn)) {
+        return true;
+    } else if (isString(fn)) {
+        try {
+            evalFcn(fn);
+            isFcn = true;
+        } catch (error) {
+            isFcn = false;
+        }
+    }
+    return isFcn;
+}
+function evalFcn(fn) {
+    let Fn = Function;
+    return new Fn('return ' + fn)();
+}
 function worksheetAddImages(images, workbook, worksheet) {
     if (images && isArray(images)) {
         for (let i = 0, len = images.length; i < len; i++) {
@@ -66,7 +84,7 @@ function worksheetAddBackgroundImage(backgroundImage, workbook, worksheet) {
     if (!backgroundImage) {
         return;
     }
-    let { base64, extension = 'png' } = backgroundImage;
+    const { base64, extension = 'png' } = backgroundImage;
     let img = workbookAddBase64Image(base64, extension, workbook);
     worksheet.addBackgroundImage(img);
 }
@@ -83,7 +101,7 @@ function getNextSheetname(workbook) {
     return 'sheet1';
 }
 function tableElAppendSheet(data, worksheet, config = {}) {
-    let { startCol = 0, startRow = 0 } = config;
+    const { startCol = 0, startRow = 0 } = config;
     appendCellDatasToSheet(data, worksheet, { startCol, startRow });
     return {
         r: data.len.r,
@@ -92,7 +110,7 @@ function tableElAppendSheet(data, worksheet, config = {}) {
 }
 function appendCellDatasToSheet(data, worksheet, config = {}) {
     let { cellInfo, mergeInfo, cellStyleInfo } = data;
-    let { startCol = 0, startRow = 0 } = config;
+    const { startCol = 0, startRow = 0 } = config;
     Object.keys(cellInfo).forEach(cell => {
         let newCell = getNewCell(cell, { r: startRow, c: startCol });
         let wsCell = worksheet.getCell(newCell);
@@ -104,7 +122,7 @@ function appendCellDatasToSheet(data, worksheet, config = {}) {
     tableMergeCells(mergeInfo, worksheet, { startCol, startRow });
 }
 function getNewCell(cell, { c = 0, r = 0 } = { r, c }) {
-    let { col, row } = decodeAddress(cell);
+    const { col, row } = decodeAddress(cell);
     return encodeAddress2(row + r - 1, col + c - 1);
 }
 function tableMergeCells(mergeInfo, worksheet, { startCol, startRow }) {
@@ -122,20 +140,30 @@ function tableMergeCells(mergeInfo, worksheet, { startCol, startRow }) {
 function worksheetMergeCells(worksheet, s, e) {
     worksheet.mergeCells(s, e);
 }
+function getKeyName(column) {
+    if (isObject(column)) {
+        const { key } = column;
+        return key;
+    } else if (isString(column)) {
+        return column;
+    }
+    return null;
+}
 function keysDataAppendSheet(options, worksheet, { startCol, startRow }) {
-    let { header, keys, data = [], rowStyle, mergeCells } = options;
+    let { header, keys, data = [], rowStyle, mergeCells,mergeCellValueType } = options;
     let headerData = convertToRows(header, {
         startCol: startCol,
         startRow: startRow
     });
     keys = keys ? keys : getKeys(header);
-    let { r, c } = headerData.len;
+    const { r, c } = headerData.len;
     appendCellDatasToSheet(headerData, worksheet);
     dataListAppendSheet(worksheet, {
         data,
         keys,
         mergeCells,
-        rowStyle
+        rowStyle,
+        mergeCellValueType
     }, {
         startCol: startCol,
         startRow: startRow + r
@@ -146,23 +174,39 @@ function keysDataAppendSheet(options, worksheet, { startCol, startRow }) {
     };
 }
 function dataListAppendSheet(worksheet, options, { startCol, startRow }) {
-    let { data = [], keys, mergeCells, rowStyle } = options;
+    let { data = [], keys, mergeCells, rowStyle, mergeCellValueType = 1 } = options;
+    let mergeCellValues = {};
     const fcn = (i, row) => {
         for (let k = 0, kLen = keys.length; k < kLen; k++) {
-            let cell = worksheet.getCell(encodeAddress2(i + startRow, k + startCol));
-            let column = keys[k];
-            cell.value = getCellValue(row, column, i + startRow, k + startCol);
+            const cellName = encodeAddress2(i + startRow, k + startCol);
+            let cell = worksheet.getCell(cellName);
+            const column = keys[k];
+            const cellValue = getCellValue(row, column, i + startRow, k + startCol);
+            cell.value = cellValue;
 
-            if (mergeCells && isFunction(mergeCells)) {
-                mergeCellsFcn(worksheet, i + startRow, k + startCol, mergeCells({ row, rowIndex: i, key: keys[k], keyIndex: k }));
+            if (mergeCells && is__Fcn(mergeCells)) {
+                mergeCells = isFunction(mergeCells) ? mergeCells : evalFcn(mergeCells);
+                const mInfo = mergeCells({ row, rowIndex: i, key: getKeyName(keys[k]), keyIndex: k });
+                if (mInfo) {
+                    const { value } = mInfo;
+                    mergeCellsFcn(worksheet, i + startRow, k + startCol, mInfo);
+                    if (mergeCellValueType === 1) {
+                        mergeCellValues[cellName] = cellValue;
+                    }
+                    if (value) {
+                        mergeCellValuesData(mergeCellValues, cellName, value, data, i, keys, k);
+                    }
+                }
             }
 
-            if (rowStyle && isFunction(rowStyle)) {
-                rowStyleFcn(cell, rowStyle({ row, rowIndex: i, key: keys[k], keyIndex: k }));
+            if (rowStyle && is__Fcn(rowStyle)) {
+                rowStyle = isFunction(rowStyle) ? rowStyle : evalFcn(rowStyle);
+                rowStyleFcn(cell, rowStyle({ row, rowIndex: i, key: getKeyName(keys[k]), keyIndex: k }));
             }
             if (isObject(column)) {
                 let { cellStyle } = column;
-                if (cellStyle && isFunction(cellStyle)) {
+                if (cellStyle && is__Fcn(cellStyle)) {
+                    cellStyle = isFunction(cellStyle) ? cellStyle : evalFcn(cellStyle);
                     cellStyleFcn(cell, cellStyle({ row, rowIndex: i }));
                 }
             }
@@ -171,12 +215,28 @@ function dataListAppendSheet(worksheet, options, { startCol, startRow }) {
     for (let i = 0, len = data.length; i < len; i++) {
         fcn(i, data[i]);
     }
+    setMergeCellValuesData(mergeCellValues, worksheet);
+}
+function setMergeCellValuesData(mergeCellValues, worksheet) {
+    Object.keys(mergeCellValues).forEach(item => {
+        worksheet.getCell(item).value = mergeCellValues[item];
+    });
+}
+function mergeCellValuesData(mergeCellValues, cellName, value, data, i, keys, k) {
+    let _value = '';
+    if (isString(value)) {
+        _value = value;
+    } else if (isFunction(value)) {
+        _value = value({ row: data[i], rowIndex: i, key: getKeyName(keys[k]), keyIndex: k, rows: data, keys });
+        _value = _value ? _value : '';
+    }
+    mergeCellValues[cellName] = _value;
 }
 function mergeCellsFcn(worksheet, sRow, sCol, mergeInfo) {
     if (!mergeInfo) {
         return;
     }
-    let { rowspan = 1, colspan = 1 } = mergeInfo;
+    const { rowspan = 1, colspan = 1 } = mergeInfo;
     const valueFcn = ({ sr, sc, er, ec }) => {
         worksheetMergeCells(worksheet, encodeAddress2(sr, sc), encodeAddress2(er, ec));
     };
@@ -220,7 +280,8 @@ function styleFcn(cell, styleInfo) {
 function getCellValue(row, column, sRow, sCol) {
     if (isObject(column)) {
         let { key, fmt } = column;
-        if (fmt && isFunction(fmt)) {
+        if (fmt && is__Fcn(fmt)) {
+            fmt = isFunction(fmt) ? fmt : evalFcn(fmt);
             return fmt({ row, rowIndex: sRow, key, keyIndex: sCol });
         }
         return row[key] || '';
@@ -235,7 +296,7 @@ function tableFcn(options) {
     let nRow = row;
     let nCol = col;
     let { el, space = {}, origin } = table;
-    let { left = 0, top = 0, right = 0, bottom = 0 } = space;
+    const { left = 0, top = 0, right = 0, bottom = 0 } = space;
     let _origin = getOrigin(origin);
     let _startCol = col + left;
     let _startRow = row + top;
@@ -292,7 +353,7 @@ function tablesFcn(options) {
     });
 }
 function tablesCallbackFcn(tables, options = {}) {
-    let { before, enter, after } = options;
+    const { before, enter, after } = options;
     for (let r = 0, rLen = tables.length; r < rLen; r++) {
         let cTables = tables[r];
         if (before) {
@@ -361,7 +422,7 @@ function getOrigin(origin) {
         };
     }
     if (isString(origin)) {
-        let { col, row } = decodeAddress(origin);
+        const { col, row } = decodeAddress(origin);
         return {
             col: col - 1,
             row: row - 1
@@ -377,7 +438,7 @@ export async function readWorkbookFromRemoteFile(url, workbook) {
         return workbook;
     } catch (error) {
         console.error(error);
-    } 
+    }
 }
 function getWriteBuffer(workbook) {
     return new Promise((resolve, reject) => {

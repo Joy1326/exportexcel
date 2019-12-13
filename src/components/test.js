@@ -1,12 +1,12 @@
 /* eslint-disable */
 import exportExcel, {
-    exportExcelUseWorker,
+    // exportExcelUseWorker as exportExcel,
     getBase64Image
 } from "../export";
 import logo from "../assets/logo.png";
 import img from "../assets/a.jpg";
 export default function testExport(type, table) {
-    type = 10;
+    type = 3;
     switch (type) {
         case 1:
             export1(table);
@@ -62,15 +62,37 @@ function export2(table) {
         filename: '从G3单元格开始'
     })
 }
-// 使用样式
+// 使用样式,合并
 function export3(table) {
     exportExcel({
         table: {
             header: getHead(),
             data: getData(),
-            rowStyle: rowStyle
+            rowStyle: rowStyle,
+            mergeCells({ rowIndex, key }) {
+                if (rowIndex === 1&&key==='G') {
+                    return {
+                        colspan:2
+                    }
+                }
+                if (rowIndex === 3 && key === "A") {
+                    return {
+                        rowspan:3
+                    }
+                }
+                if (rowIndex === 3 && key === "D") {
+                    return {
+                        rowspan: 2,
+                        colspan: 3,
+                        // value:'SFSF'
+                        value({rows,row,key}) {
+                            return row[key]+'___'+rows[0][key]+row.A
+                        }
+                    }
+                }
+            }
         },
-        filename: '样式'
+        filename: '样式-合并'
     })
 }
 // 间隔

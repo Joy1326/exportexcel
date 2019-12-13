@@ -51,7 +51,7 @@ exportExcel({
     keys?:,
     data?:[],
     rowStyle?:({row,rowIndex,key,keyIndex})=>styleOptions,
-    mergeCells?:({row,rowIndex,key,keyIndex})=>{colspan?:number,rowspan?:number},
+    mergeCells?:({row,rowIndex,key,keyIndex})=>{colspan?:number,rowspan?:number,value?:string||number||({row,rows,rowIndex,key,keys,keyIndex})},
     space?:{left?:number,top?:number,right?:number,bottom?:number},//表格间隔
     origin?:'A1'||{col:number,row:number} // 定位到单元格
 }

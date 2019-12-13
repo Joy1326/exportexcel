@@ -119,7 +119,7 @@
 //   exportExcelUseWorker,
 //   getBase64Image
 // } from "../export";
-import testExport from './test2';
+import testExport from './test';
 // import img from "../assets/logo.png";
 // import img1 from "../assets/a.jpg";
 export default {
@@ -151,8 +151,11 @@ export default {
       return this.$refs.table;
     },
     exportFcn1(){
-      // {table:tableDOM}
-      testExport(8,this.getRefTable());
+        testExport(1,this.getRefTable());
+
+      // for(let i=1;i<=10;i++){
+      //   testExport(i,this.getRefTable());
+      // }
     },
     async export1() {
       // let a = tableToJson(this.getRefTable())

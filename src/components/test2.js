@@ -44,9 +44,15 @@ export default function testExport(type, table) {
 }
 // 基本使用
 function export1(table) {
-    exportExcel({
+    let ff = { a: 'a' };
+    let o = {
         table: table,
-    });
+        gg() {
+            console.log('dsfs')
+            console.log(ff)
+        }
+    };
+    exportExcel(o);
 }
 // 定位到单元格G3
 function export2(table) {
@@ -60,13 +66,14 @@ function export2(table) {
 }
 // 使用样式
 function export3(table) {
-    exportExcel({
+    let o = {
         table: {
             el: table,
             rowStyle: rowStyle
         },
         filename: '样式'
-    })
+    };
+    exportExcel(o);
 }
 // 间隔
 function export4(table) {
@@ -154,6 +161,7 @@ function export8(table) {
                 [table, table],
                 [table]
             ],
+            gg(){}
         }, {
             table: table
         }, {
