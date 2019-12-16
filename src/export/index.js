@@ -26,18 +26,14 @@ export default function exportExcel(options, config = {}) {
     })
 }
 export function exportExcelUseWorker(options, config = {}) {
-    let _rootPath = '';
-    let _url = './export-worker/export.js';
+    let _filePath = './export-worker/export.js';
     if (window.workerFileRootPath) {
         _rootPath = window.workerFileRootPath;
     };
-    if (window.workerFileUrl) {
-        _url = window.workerFileUrl;
-    }
     return new Promise((resolve, reject) => {
         let { filename = "下载", suffixName = '.xlsx' } = options;
         forWokerData(options, true);
-        const wk = new Worker(_rootPath+_url);
+        const wk = new Worker(_filePath);
         wk.postMessage({ options, config });
         wk.onmessage = function (e) {
             if(e.data===-1){
