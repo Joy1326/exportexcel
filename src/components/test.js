@@ -6,7 +6,7 @@ import exportExcel, {
 import logo from "../assets/logo.png";
 import img from "../assets/a.jpg";
 export default function testExport(type, table) {
-    type = 3;
+    type = 5;
     switch (type) {
         case 1:
             export1(table);
@@ -120,7 +120,7 @@ function export5(table) {
             [{
                 header: getHead(),
                 data: getData()
-            }]
+            },table]
         ],
         filename: '多表格输出'
     })
@@ -219,6 +219,10 @@ function rowStyle({ rowIndex }) {
 function getHead() {
     return [
         {
+            title: '序号',
+            type:'index'
+        },
+        {
             key: "A",
             title: "A-title"
         },
@@ -239,8 +243,11 @@ function getHead() {
         {
             key: "C",
             title: "C-title",
-            fmt({ row, key }) {
-                return row.D + "0000";
+            fmt({ row, key,rowIndex }) {
+                if (rowIndex === 2) {
+                    return row[key]+'test'
+                }
+                return row[key];
             }
         },
         {

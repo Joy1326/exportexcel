@@ -150,7 +150,7 @@ function getKeyName(column) {
     return null;
 }
 function keysDataAppendSheet(options, worksheet, { startCol, startRow }) {
-    let { header, keys, data = [], rowStyle, mergeCells,mergeCellValueType } = options;
+    let { header, keys, data = [], rowStyle, mergeCells, mergeCellValueType } = options;
     let headerData = convertToRows(header, {
         startCol: startCol,
         startRow: startRow
@@ -181,7 +181,7 @@ function dataListAppendSheet(worksheet, options, { startCol, startRow }) {
             const cellName = encodeAddress2(i + startRow, k + startCol);
             let cell = worksheet.getCell(cellName);
             const column = keys[k];
-            const cellValue = getCellValue(row, column, i + startRow, k + startCol);
+            const cellValue = getCellValue(row, column, i, k);
             cell.value = cellValue;
 
             if (mergeCells && is__Fcn(mergeCells)) {
@@ -277,14 +277,15 @@ function styleFcn(cell, styleInfo) {
         cell[styleItem] = styleInfo[styleItem];
     }
 }
-function getCellValue(row, column, sRow, sCol) {
+function getCellValue(row, column, rowIndex, colIndex) {
     if (isObject(column)) {
-        let { key, fmt } = column;
+        let { type, key, fmt } = column;
+        let _v = type ? type === 'index' ? rowIndex + 1 : row[key] : row[key];
         if (fmt && is__Fcn(fmt)) {
             fmt = isFunction(fmt) ? fmt : evalFcn(fmt);
-            return fmt({ row, rowIndex: sRow, key, keyIndex: sCol });
+            return fmt({ row, rowIndex: rowIndex, key, keyIndex: colIndex });
         }
-        return row[key] || '';
+        return _v;
     } else if (isString(column)) {
         return row[column];
     }

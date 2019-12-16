@@ -151,7 +151,7 @@ export default {
       return this.$refs.table;
     },
     exportFcn1(){
-        testExport(1,this.getRefTable());
+        testExport(5,this.getRefTable());
 
       // for(let i=1;i<=10;i++){
       //   testExport(i,this.getRefTable());

@@ -2,7 +2,7 @@
 import { saveAs } from 'file-saver';
 import exportExcelFcn from './export';
 export { getBase64Image } from './image_util';
-import { isObject,deepCopy } from './utils';
+import { isObject } from './utils';
 import { forWokerData } from './workerfmt';
 export default function exportExcel(options, config = {}) {
     return new Promise((resolve, reject) => {
@@ -59,4 +59,14 @@ function toSaveAs(buffer, fileName) {
     } catch (error) {
         console.error(error);
     }
+}
+export function canExport(showTip = true, msg = "该浏览器不支持前端导出功能，请升级浏览器！") {
+    let canExp = true;
+    if (typeof Worker === 'undefined') {
+        canExp = false;
+        if (showTip) {
+            alert(msg);
+        }
+    }
+    return canExp;
 }
